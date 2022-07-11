@@ -52,7 +52,16 @@ chrome.action.onClicked.addListener(async (tab) => {
 
     chrome.scripting.executeScript({
         target: { tabId: tab.id },
-        files: ["content.js"],
+        files: ["js/jquery.js", "content.js"],
+    });
+});
+
+chrome.tabs.onUpdated.addListener((tabId, changeInfo, { url }) => {
+    if (changeInfo.status !== 'complete' || !/https:\/\/.+roblox.com\/games/g.test(url)) return;
+    
+    chrome.scripting.executeScript({
+        target: { tabId: tabId },
+        files: ["js/jquery.js", "load.js"],
     });
 });
 

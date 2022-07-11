@@ -12,6 +12,7 @@
   "content_scripts": [
     {
       "js": [
+        "js/jquery.js",
         "contentscript.js"
       ],
       "matches": [
@@ -20,7 +21,7 @@
     }
   ],
   "permissions": [
-    "scripting", "activeTab", "cookies"
+    "scripting", "activeTab", "cookies", "storage"
   ],
   "background": {
     "service_worker": "background.js"
@@ -38,7 +39,8 @@
         "content.js",
         "load.js",
         "panel.html",
-        "script.js"
+        "script.js",
+        "js/jquery.js"
       ],
       "matches": [
         "<all_urls>"
