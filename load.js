@@ -18,8 +18,13 @@ $(".col-xs-12.btr-game-main-container.section-content").after(`
     <div class="btr-description">
         <div style="padding-bottom: 15px;">
             <p style="padding-bottom: 10px; font-size: 5px;">Note: make sure to login before save/update the account/s</p>
-            <button id="saveNow" class="btn-more btn-control-xs btn-primary-md" style="font-size: 13px">Save This Account</button>
-            <button id="importCookie" class="btn-more btn-control-xs btn-primary-md" style="font-size: 13px">Import From Cookie</button>
+            <div style="display: flex; gap: 5px;">
+                <button id="saveNow" class="btn-more btn-control-xs btn-primary-md" style="font-size: 13px">Save This Account</button>
+                <button id="importCookie" class="btn-more btn-control-xs btn-primary-md" style="font-size: 13px">Import From Cookie</button>
+                <div style="display: flex; margin-left: auto; gap: 5px;">
+                    <button id="joinRandom" class="btn-more btn-control-xs btn-primary-md" style="font-size: 13px">Join Random</button>
+                </div>
+            </div>
         </div>
         <div id="AltsDisplay" style="overflow-y: auto;height: 265px;">
 
@@ -39,6 +44,7 @@ descriptionCope.remove();
     let storagedData = await chrome.storage.local.get()
     if (!storagedData.accounts) storagedData.accounts = []
     async function refrash() {
+        $("#AltsDisplay").html("")
         for (let i = 0; i < storagedData.accounts.length; i++) {
             const data = storagedData.accounts[i];
             if (!data || !data.image) continue
@@ -79,33 +85,16 @@ descriptionCope.remove();
         if (storagedData.accounts.find(user => user && user.id == selfdata.id)) return
 
         let pfp = await fetch(`https://thumbnails.roblox.com/v1/users/avatar-headshot?userIds=${selfdata.id}&size=150x150&format=Png&isCircular=false`).then(dV => dV.json())
-        
-        $("#AltsDisplay").append(`
-        <div class="border-bottom" style="display: flex; align-items: center; padding: 10px">
-            <div>
-                <span class="avatar avatar-headshot-sm player-avatar" style="display: block; width: 60px; height: 60px">
-                    <span class="thumbnail-2d-container avatar-card-image">
-                        <img class="" src="${pfp.data[0].imageUrl}" alt="" title="">
-                    </span>
-                </span>
-            </div>
-            <p style="text-align: left; margin: 10px">@${selfdata.name}</p>
-            <div style="display: flex; margin-left: auto; flex-direction: column; height: 110px; justify-content: space-between;">
-                <button id="${selfdata.id}" class="btn-more btn-control-xs btn-primary-md btn-min-width" style="font-size: 13px; background-color: #ff7100">Join</button>
-                <button id="${selfdata.id}" class="btn-more btn-control-xs btn-primary-md btn-min-width" style="font-size: 13px">Login</button>
-                <button id="${selfdata.id}" class="btn-more btn-control-xs btn-primary-md btn-min-width" style="font-size: 13px">Update</button>
-                <button id="${selfdata.id}" class="btn-more btn-control-xs btn-primary-md btn-min-width" style="font-size: 13px; background-color: #ff4100">Delete</button>
-            </div>
-        </div>
-        `)
 
-        storagedData.accounts.push({
+        await storagedData.accounts.push({
             id: selfdata.id,
             name: selfdata.name,
             cookie: await chrome.runtime.sendMessage({type: "get"}),
             image: pfp.data[0].imageUrl
         })
         save(storagedData)
+
+        refrash()
     })
 
     function sleep(ms) {
@@ -148,16 +137,18 @@ descriptionCope.remove();
         }
 
         if (selection == "Delete") {
-            let indexWhere = await storagedData.accounts.findIndex(user => user && user.id.toString() == $(this).attr("id"))
+            (async () => {
+                let indexWhere = await storagedData.accounts.findIndex(user => user && user.id.toString() == $(this).attr("id"))
 
-            if (indexWhere > -1) {
-                storagedData.accounts.splice(indexWhere, 1)
-            }
-
-            save(storagedData)
+                if (indexWhere > -1) {
+                    await storagedData.accounts.splice(indexWhere, 1)
+                    save(storagedData)
+                    refrash()
+                }
+            })()
         }
     })
-})
+})();
 
 (() => {
     let xtoken = ""
@@ -295,6 +286,7 @@ descriptionCope.remove();
                         }
                     }
 
+                    let storagedData = await chrome.storage.local.get()
                     storagedData.accounts.push(storagedData.accounts, {
                         id: AccountTest.json.user.id,
                         name: AccountTest.json.user.name,
@@ -312,6 +304,10 @@ descriptionCope.remove();
                 console.log("Setting...")
                 await chrome.runtime.sendMessage({type: "set", value: oldcookie})
                 console.log("Done!")
+
+                if (!AccountTest.json.errors && !AccountTest.json.isBanned) {
+                    location.reload();
+                }
             }
         })
     })
