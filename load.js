@@ -37,6 +37,7 @@ descriptionCope.remove();
 
 (async () => {
     let storagedData = await chrome.storage.local.get()
+    if (!storagedData.accounts) storagedData.accounts = []
     async function refrash() {
         for (let i = 0; i < storagedData.accounts.length; i++) {
             const data = storagedData.accounts[i];
@@ -64,6 +65,10 @@ descriptionCope.remove();
     }
 
     refrash()
+
+    function save(object) {
+        chrome.storage.local.set(object)
+    }
 
     $("#saveNow").click(async () => {
         let selfdata = await fetch("https://users.roblox.com/v1/users/authenticated", {
@@ -108,7 +113,8 @@ descriptionCope.remove();
     }
 
     $("#AltsDisplay").on("click", ".btn-more", function () {
-        if ($(this).html() == "Join") {
+        let selection = $(this).html()
+        if (selection == "Join") {
             (async () => {
                 let account = storagedData.accounts.find(user => user && user.id.toString() == $(this).attr("id"))
                 let oldcookie = await chrome.runtime.sendMessage({type: "get"})
@@ -130,7 +136,7 @@ descriptionCope.remove();
             })()
         }
 
-        if ($(this).html() == "Login") {
+        if (selection == "Login") {
             (async () => {
                 let account = storagedData.accounts.find(user => user && user.id.toString() == $(this).attr("id"))
 
@@ -139,6 +145,16 @@ descriptionCope.remove();
                     location.reload()
                 }
             })()
+        }
+
+        if (selection == "Delete") {
+            let indexWhere = await storagedData.accounts.findIndex(user => user && user.id.toString() == $(this).attr("id"))
+
+            if (indexWhere > -1) {
+                storagedData.accounts.splice(indexWhere, 1)
+            }
+
+            save(storagedData)
         }
     })
 })
