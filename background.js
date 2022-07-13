@@ -45,23 +45,32 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
         sendResponse(allowjoin)
         allowjoin = false
     }
+    if (request.type == "login") {
+        sendResponse(true)
+        chrome.windows.create({"url": "https://roblox.com/login", "incognito": true});
+    }
 });
 
-chrome.action.onClicked.addListener(async (tab) => {
-    if (!tab.url.match("roblox.com/games")) return;
+// chrome.action.onClicked.addListener(async (tab) => {
+//     if (!tab.url.match("roblox.com/games")) return;
 
-    chrome.scripting.executeScript({
-        target: { tabId: tab.id },
-        files: ["js/jquery.js", "content.js"],
-    });
-});
+//     chrome.scripting.executeScript({
+//         target: { tabId: tab.id },
+//         files: ["js/FunCaptcha.js", "js/jquery.js", "content.js"],
+//     });
+// });
 
-chrome.tabs.onUpdated.addListener((tabId, changeInfo, { url }) => {
+chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, { url }) => {
     if (changeInfo.status !== 'complete' || !/https:\/\/.+roblox.com\/games/g.test(url)) return;
     
+    await chrome.scripting.insertCSS({
+        target: { tabId: tabId },
+        files: ["css/customscroll.css"],
+    });
+
     chrome.scripting.executeScript({
         target: { tabId: tabId },
-        files: ["js/jquery.js", "load.js"],
+        files: ["js/FunCaptcha.js", "js/jquery.js", "load.js"],
     });
 });
 

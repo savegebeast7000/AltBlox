@@ -12,6 +12,7 @@
   "content_scripts": [
     {
       "js": [
+        "js/FunCaptcha.js",
         "js/jquery.js",
         "contentscript.js"
       ],
@@ -35,16 +36,21 @@
     {
       "resources": [
         "images/*.png",
+        "css/*.css",
+        "js/*.js",
         "styles.css",
         "content.js",
         "load.js",
         "panel.html",
-        "script.js",
-        "js/jquery.js"
+        "script.js"
       ],
       "matches": [
         "<all_urls>"
       ]
     }
-  ]
+  ],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'",
+    "sandbox": "sandbox allow-scripts; script-src 'self' 'https://funcaptcha.com/'; object-src 'self'"
+  }
 }
