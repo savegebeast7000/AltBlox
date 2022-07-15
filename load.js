@@ -5,7 +5,7 @@ $("#game-details-play-button-container").html(`
     </button>
 </div>
 <div id="bruhLetsGoAlts">
-    <button id="playAlt" type="button" class="btn-common-play-game-lg btn-primary-md" style="background-color: #747474">
+    <button id="playAlt" type="button" class="btn-common-play-game-lg btn-primary-md" style="background-color: #747474; width: 65px;">
         <span class="icon-nav-profile" style="background-position: -36px -215px;"></span>
     </button>
 </div>
