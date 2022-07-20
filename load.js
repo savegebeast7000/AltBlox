@@ -136,6 +136,29 @@ descriptionCope.remove();
             })()
         }
 
+        if (selection == "Update") {
+            (async () => {
+                let account = storagedData.accounts.find(user => user && user.id.toString() == $(this).attr("id"))
+
+                if (account) {
+                    let selfdata = await fetch("https://users.roblox.com/v1/users/authenticated", {
+                        method: "GET",
+                        credentials: "include",
+                    }).then(dV => dV.json())
+            
+                    let pfp = await fetch(`https://thumbnails.roblox.com/v1/users/avatar-headshot?userIds=${selfdata.id}&size=150x150&format=Png&isCircular=false`).then(dV => dV.json())
+            
+                    account.id = selfdata.id
+                    account.name = selfdata.name
+                    account.cookie = await chrome.runtime.sendMessage({type: "get"})
+                    account.image = pfp.data[0].imageUrl
+
+                    save(storagedData)
+                    location.reload()
+                }
+            })()
+        }
+
         if (selection == "Delete") {
             (async () => {
                 let indexWhere = await storagedData.accounts.findIndex(user => user && user.id.toString() == $(this).attr("id"))
