@@ -17,7 +17,7 @@ $(".col-xs-12.btr-game-main-container.section-content").after(`
 <div class="col-xs-12 btr-game-main-container section-content rbx-tabs-horizontal">
     <div class="btr-description">
         <div style="padding-bottom: 15px;">
-            <p style="padding-bottom: 10px; font-size: 5px;">Note: make sure to login before save/update the account/s</p>
+            <p id="AltsTopNote" style="padding-bottom: 10px; font-size: 5px;">Note: make sure to login before save/update the account/s</p>
             <div style="display: flex; gap: 5px;">
                 <button id="saveNow" class="btn-more btn-control-xs btn-primary-md" style="font-size: 13px">Save This Account</button>
                 <button id="importCookie" class="btn-more btn-control-xs btn-primary-md" style="font-size: 13px">Import From Cookie</button>
@@ -42,6 +42,8 @@ descriptionCope.remove();
 
 (async () => {
     let storagedData = await chrome.storage.local.get()
+
+    console.log(storagedData)
     if (!storagedData.accounts) storagedData.accounts = []
     async function refrash() {
         $("#AltsDisplay").html("")
@@ -68,6 +70,7 @@ descriptionCope.remove();
             </div>
             `)
         }
+        $("#AltsTopNote").html(`Note: make sure to login before save/update the account/s - (${storagedData.accounts.length} accounts)`)
     }
 
     refrash()
@@ -95,6 +98,76 @@ descriptionCope.remove();
         save(storagedData)
 
         refrash()
+    })
+
+    $("#importCookie").click(async () => {
+        $("#rbx-body").append(`
+        <div id="importCookiess" class="dialog">
+            <div class="fade modal-backdrop in"></div>
+                <div tabindex="-1" class="fade modal-modern modal-modern-challenge-captcha in modal" style="display: block;">
+                    <div class="modal-dialog">
+                        <div class="modal-content" role="document">
+                            <div class="modal-body">
+                                <button type="button" class="challenge-captcha-close-button">
+                                    <span id="importCancel" class="icon-close"></span>
+                                </button>
+                                <div class="challenge-captcha-body" id="challenge-captcha-element">
+                                    <div id="FunCaptchaMain">
+                                        <input id="importVal" type="text" focus-me="true" placeholder=" " class="form-control input-field ng-pristine ng-valid ng-isolate-scope ng-not-empty ng-valid-maxlength ng-touched">
+                                        <div style="padding-top:10px">
+                                            <button id="importSave" class="btn-primary-md btn-min-width ng-binding"> Save </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>`)
+
+        $("#importCancel").click(async () => {
+            $("#importCookiess").remove()
+        })
+
+        $("#importSave").click(async () => {
+            let setcookie = $("#importVal").val().replace(/\s/g, '')
+            let oldcookie = await chrome.runtime.sendMessage({type: "get"})
+            if (!oldcookie) {
+                if (document.cookie.split(".ROBLOSECURITY=")[1]) {
+                    oldcookie = document.cookie.split(".ROBLOSECURITY=")[1].split(";")[0]
+                } else {
+                    return
+                }
+            }
+
+            await chrome.runtime.sendMessage({type: "set", value: setcookie})
+
+            let selfdata = await fetch("https://users.roblox.com/v1/users/authenticated", {
+                method: "GET",
+                credentials: "include",
+            }).then(dV => dV.json())
+    
+            if (storagedData.accounts.find(user => user && user.id == selfdata.id)) {
+                await chrome.runtime.sendMessage({type: "set", value: oldcookie})
+                $("#importCookiess").remove()
+                return
+            }
+    
+            let pfp = await fetch(`https://thumbnails.roblox.com/v1/users/avatar-headshot?userIds=${selfdata.id}&size=150x150&format=Png&isCircular=false`).then(dV => dV.json())
+    
+            await storagedData.accounts.push({
+                id: selfdata.id,
+                name: selfdata.name,
+                cookie: setcookie,
+                image: pfp.data[0].imageUrl
+            })
+            save(storagedData)
+    
+            refrash()
+            await chrome.runtime.sendMessage({type: "set", value: oldcookie})
+            $("#importCookiess").remove()
+        })
     })
 
     function sleep(ms) {
@@ -310,7 +383,7 @@ descriptionCope.remove();
                     }
 
                     let storagedData = await chrome.storage.local.get()
-                    storagedData.accounts.push(storagedData.accounts, {
+                    storagedData.accounts.push({
                         id: AccountTest.json.user.id,
                         name: AccountTest.json.user.name,
                         cookie: newcookie,

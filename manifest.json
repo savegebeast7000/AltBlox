@@ -22,7 +22,7 @@
     }
   ],
   "permissions": [
-    "scripting", "activeTab", "cookies", "storage"
+    "scripting", "cookies", "storage"
   ],
   "background": {
     "service_worker": "background.js"

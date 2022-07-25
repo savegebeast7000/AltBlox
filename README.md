@@ -16,3 +16,9 @@
 #### What does this plugin do?
 
 This plugin allows users to join game / login with a random account
+
+#### Instructions:
+   1. Get into a game page
+   2. You know what to do
+      - White Button (Next to the green play button) will let to login into a random 2017 account and play
+      - Menu
