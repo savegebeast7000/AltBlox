@@ -298,7 +298,7 @@ function waitForElm(selector) {
                 if (indexWhere > -1) {
                     await storagedData.accounts.splice(indexWhere, 1)
                     save(storagedData)
-                    refrash()
+                    $("#AccountSettingMenu").remove()
                 }
             })
 
