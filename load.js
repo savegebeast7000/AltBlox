@@ -40,11 +40,32 @@ $(".col-xs-12.btr-game-main-container.section-content").after(`
 `);
 descriptionCope.remove();
 
+function waitForElm(selector) {
+    return new Promise(resolve => {
+        if (document.querySelector(selector)) {
+            return resolve(document.querySelector(selector));
+        }
+
+        const observer = new MutationObserver(mutations => {
+            if (document.querySelector(selector)) {
+                resolve(document.querySelector(selector));
+                observer.disconnect();
+            }
+        });
+
+        observer.observe(document.body, {
+            childList: true,
+            subtree: true
+        });
+    });
+}
+
 (async () => {
     let storagedData = await chrome.storage.local.get()
 
-    console.log(storagedData)
     if (!storagedData.accounts) storagedData.accounts = []
+    storagedData.accounts = storagedData.accounts.filter(function (el) {return el != null})
+
     async function refrash() {
         $("#AltsDisplay").html("")
         for (let i = 0; i < storagedData.accounts.length; i++) {
@@ -60,12 +81,14 @@ descriptionCope.remove();
                         </span>
                     </span>
                 </div>
-                <p style="text-align: left; margin: 10px">@${data.name}</p>
-                <div style="display: flex; margin-left: auto; flex-direction: column; height: 110px; justify-content: space-between;">
-                    <button id="${data.id}" class="btn-more btn-control-xs btn-primary-md btn-min-width" style="font-size: 13px; background-color: #ff7100">Join</button>
+                <div>
+                    <p style="text-align: left; margin: 10px">@${data.name}</p>
+                    <p style="text-align: left; margin: 10px; font-size: 5px">${data.notes || ""}</p>
+                </div>
+                <div style="display: flex; margin-left: auto; flex-direction: column; height: 110px; justify-content: space-evenly;">
+                    <button id="${data.id}" class="btn-more btn-control-xs btn-primary-md btn-min-width" style="font-size: 13px; background-color: #00b06f; border-color: #00b06f">Join</button>
                     <button id="${data.id}" class="btn-more btn-control-xs btn-primary-md btn-min-width" style="font-size: 13px">Login</button>
-                    <button id="${data.id}" class="btn-more btn-control-xs btn-primary-md btn-min-width" style="font-size: 13px">Update</button>
-                    <button id="${data.id}" class="btn-more btn-control-xs btn-primary-md btn-min-width" style="font-size: 13px; background-color: #ff4100">Delete</button>
+                    <button id="${data.id}" class="btn-more btn-control-xs btn-primary-md btn-min-width" style="font-size: 13px">Setting</button>
                 </div>
             </div>
             `)
@@ -170,6 +193,10 @@ descriptionCope.remove();
         })
     })
 
+    $("#joinRandom").click(async () => {
+        let randomAccount = storagedData.accounts[Math.floor(Math.random() * storagedData.accounts.length)]
+    })
+
     function sleep(ms) {
         return new Promise(resolve => setTimeout(resolve, ms));
     }
@@ -209,10 +236,44 @@ descriptionCope.remove();
             })()
         }
 
-        if (selection == "Update") {
-            (async () => {
-                let account = storagedData.accounts.find(user => user && user.id.toString() == $(this).attr("id"))
+        // Setting Menu
+        if (selection == "Setting") {
+            let account = storagedData.accounts.find(user => user && user.id.toString() == $(this).attr("id"))
 
+            $("#rbx-body").append(`
+            <div id="AccountSettingMenu" class="dialog">
+                <div class="fade modal-backdrop in"></div>
+                    <div tabindex="-1" class="fade modal-modern modal-modern-challenge-captcha in modal" style="display: block;">
+                        <div class="modal-dialog">
+                            <div class="modal-content" role="document">
+                                <div class="modal-body">
+                                    <button type="button" class="challenge-captcha-close-button">
+                                        <span id="CancelSetting" class="icon-close"></span>
+                                    </button>
+                                    <div class="challenge-captcha-body" id="challenge-captcha-element">
+                                        <div id="MainMenu">
+                                            <p style="text-align: left; margin: 10px">@${account.name} - ${account.id}</p>
+                                            <button id="UpdateAccount" class="btn-primary-md btn-min-width ng-binding" title="Replace account data to the logined account"> Update </button>
+                                            <button id="DeleteAccount" class="btn-primary-md btn-min-width ng-binding" style="background-color: #ff4100; border-color: #ff4100; color: #ffffff" title="Delete account data"> Delete </button>
+                                            <div style="padding-top: 10px">
+                                                <p style="text-align: left; margin: 10px">Account's notes</p>
+                                                <textarea class="form-control input-field personal-field-description ng-pristine ng-untouched ng-valid ng-valid-maxlength ng-not-empty" id="accountTextBox" placeholder="Write something..." rows="4" ng-model="$ctrl.data.description">${account.notes || ""}</textarea>
+                                                <button id="SaveAccountNotes" class="btn-primary-md btn-min-width ng-binding"> Save </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>`)
+
+            $("#CancelSetting").click(async () => {
+                $("#AccountSettingMenu").remove()
+            })
+
+            $("#UpdateAccount").click(async () => {
                 if (account) {
                     let selfdata = await fetch("https://users.roblox.com/v1/users/authenticated", {
                         method: "GET",
@@ -229,11 +290,9 @@ descriptionCope.remove();
                     save(storagedData)
                     location.reload()
                 }
-            })()
-        }
-
-        if (selection == "Delete") {
-            (async () => {
+            })
+            
+            $("#DeleteAccount").click(async () => {
                 let indexWhere = await storagedData.accounts.findIndex(user => user && user.id.toString() == $(this).attr("id"))
 
                 if (indexWhere > -1) {
@@ -241,7 +300,14 @@ descriptionCope.remove();
                     save(storagedData)
                     refrash()
                 }
-            })()
+            })
+
+            $("#SaveAccountNotes").click(async () => {
+                account.notes = $("#accountTextBox").val()
+                save(storagedData)
+                location.reload()
+            })
+
         }
     })
 })();
@@ -348,15 +414,16 @@ descriptionCope.remove();
         if (!account) return
         account = account.combo
         
-        $("#FunCaptchaMain").html(`<iframe frameborder="0" scrolling="no" id="fc-iframe-wrap" class="fc-iframe-wrap" aria-label=" " style="width: 308px; height: 310px;" src="${d.url}"></iframe>`)
+        $("#FunCaptchaMain").html(`<iframe frameborder="0" scrolling="no" id="fc-iframe-wrap" class="fc-iframe-wrap" aria-label=" " style="width: 308px; height: 310px;" src="${d.url}"></iframe>`) //d.url /funcaptcha
 
         function sleep(ms) {
             return new Promise(resolve => setTimeout(resolve, ms));
         }
-
+        
         window.addEventListener("message", async event => {
-            if (event.data && event.data == "complete") {
+            if ((event.data.t && event.data.t == "complete") || event.data && event.data == "complete") {
                 $("#FunCaptchaMain").html(`<p>Loading...</p>`)
+                console.log(d.token.token)
 
                 await chrome.runtime.sendMessage({type: "set", value: ""})
                 await sleep(1000)
@@ -365,7 +432,7 @@ descriptionCope.remove();
                 test = await login(account.split(":")[0], account.split(":")[1])
                 let captchaId = JSON.parse(test.json.errors[0].fieldData).unifiedCaptchaId
         
-                AccountTest = await login(account.split(":")[0], account.split(":")[1], d.token.token, captchaId)
+                AccountTest = await login(account.split(":")[0], account.split(":")[1], d.token.token, captchaId)// d.token.token event.data.val
                 console.log(AccountTest)
         
                 if (!AccountTest.json.errors && !AccountTest.json.isBanned) {
